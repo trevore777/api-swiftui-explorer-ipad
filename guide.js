@@ -54,6 +54,20 @@ async function copyText(text, status) {
   setTimeout(() => { status.textContent = ''; }, 3500);
 }
 
+function makeSnippetCard(number, title, instruction, code, id) {
+  return `
+    <section class="block teaching-snippet">
+      <div class="num">Snippet ${number}</div>
+      <h3>${title}</h3>
+      <p class="muted">${instruction}</p>
+      <div class="actions">
+        <button data-guide-copy="${id}">Copy this Swift code</button>
+        <span id="status-${id}"></span>
+      </div>
+      <pre id="${id}">${escapeHtml(code)}</pre>
+    </section>`;
+}
+
 function addGuidance() {
   if (!detail || detail.querySelector('.playgrounds-guide')) return;
 
@@ -68,89 +82,130 @@ function addGuidance() {
   const parts = splitFetch(fetchCode);
   const complete = buildCompleteFile(model, fetchCode, viewCode);
 
+  const modelBlock = modelEl.closest('.block');
+  const fetchBlock = fetchEl.closest('.block');
+  const viewBlock = viewEl.closest('.block');
+
   const guide = document.createElement('section');
   guide.className = 'playgrounds-guide';
   guide.innerHTML = `
     <div class="num">Before you paste</div>
-    <h3>Start with the default Swift Playgrounds file</h3>
-    <p class="muted">Work through the small code sections below first. They show you what each part does and exactly where it belongs. The complete working file is now at the <strong>bottom of this API lesson</strong>.</p>
-
-    <div class="keep-delete-grid">
-      <div class="keep-card">
-        <strong>KEEP</strong>
-        <pre class="mini-code">import SwiftUI</pre>
-      </div>
-      <div class="delete-card">
-        <strong>WHEN USING THE FINAL COMPLETE FILE</strong>
-        <p>Delete the whole starter file, including the original <code>import SwiftUI</code>. The complete code at the bottom already contains it.</p>
-      </div>
-    </div>
+    <h3>Build the app in four clear parts</h3>
+    <p class="muted">The four snippets below are complete pieces of the final program. Each one shows exactly where it belongs. The complete working file is still at the <strong>bottom of this API lesson</strong>.</p>
 
     <div class="placement-card">
-      <div class="num">Build it in parts</div>
-      <h3>Where each code snippet belongs</h3>
+      <div class="num">Where each snippet goes</div>
       <div class="placement-grid">
-        <div><b>1</b><strong>Codable model</strong><p>Paste it <em>above</em> <code>struct ContentView: View {</code>.</p></div>
-        <div><b>2</b><strong>@State variables</strong><p>Paste them <em>inside ContentView</em>, immediately above <code>var body: some View</code>.</p></div>
-        <div><b>3</b><strong>SwiftUI screen</strong><p>Inside <code>body</code>, delete the original globe / Hello World interface and replace it with this UI.</p></div>
-        <div><b>4</b><strong>API function</strong><p>Paste it below the closing brace of <code>body</code>, but before ContentView’s final <code>}</code>.</p></div>
+        <div><b>1</b><strong>Codable model</strong><p>Paste it above <code>struct ContentView: View {</code>.</p></div>
+        <div><b>2</b><strong>@State variables</strong><p>Paste them inside <code>ContentView</code>, immediately above <code>var body: some View</code>.</p></div>
+        <div><b>3</b><strong>SwiftUI screen</strong><p>Inside <code>body</code>, remove the original globe / Hello World interface and paste this UI.</p></div>
+        <div><b>4</b><strong>API function</strong><p>Paste it below <code>body</code>, but before ContentView’s final <code>}</code>.</p></div>
       </div>
       <pre class="placement-example">import SwiftUI
 
-// 1. MODEL GOES HERE
+// 1. MODEL
 ${escapeHtml(model)}
 
 struct ContentView: View {
 
-    // 2. @STATE GOES HERE
+    // 2. STATE
 ${escapeHtml(indent(parts.state, 4))}
 
     var body: some View {
-        // 3. REPLACE HELLO WORLD UI HERE
+${escapeHtml(indent(viewCode, 8))}
     }
 
-    // 4. API FUNCTION GOES HERE
+    // 4. API FUNCTION
 ${escapeHtml(indent(parts.fn, 4))}
 }</pre>
     </div>
 
-    <div class="brace-tip"><strong>Important:</strong> the snippets immediately below are only parts of the program. Do not expect an individual snippet to run by itself. Work through them, then use the complete checked file at the bottom.</div>
+    <div class="brace-tip"><strong>Important:</strong> unlike the old guide, the example above now shows the <strong>real SwiftUI body code</strong>. Nothing is hidden behind a placeholder.</div>
   `;
 
   const firstBlock = detail.querySelector('.block');
   if (firstBlock) detail.insertBefore(guide, firstBlock);
   else detail.appendChild(guide);
 
-  const modelBlock = modelEl.closest('.block');
-  const fetchBlock = fetchEl.closest('.block');
-  const viewBlock = viewEl.closest('.block');
-  if (modelBlock) modelBlock.insertAdjacentHTML('afterbegin', '<div class="paste-location"><strong>Snippet 1 — Paste here:</strong> above <code>struct ContentView: View {</code>.</div>');
-  if (fetchBlock) fetchBlock.insertAdjacentHTML('afterbegin', '<div class="paste-location"><strong>Snippet 2 — This block contains TWO parts:</strong> put the <code>@State</code> line(s) above <code>body</code>, and put the <code>func</code> below <code>body</code> before ContentView’s final brace.</div>');
-  if (viewBlock) viewBlock.insertAdjacentHTML('afterbegin', '<div class="paste-location"><strong>Snippet 3 — Paste here:</strong> inside <code>var body: some View</code>, replacing the starter globe / “Hello, world!” interface.</div>');
+  if (modelBlock) {
+    modelBlock.outerHTML = makeSnippetCard(
+      1,
+      'Codable model',
+      'Paste this above struct ContentView: View {. It describes the JSON data Swift will decode.',
+      model,
+      'guide-model'
+    );
+  }
+
+  if (fetchBlock) {
+    fetchBlock.outerHTML =
+      makeSnippetCard(
+        2,
+        '@State variables',
+        'Paste these inside ContentView, directly above var body: some View.',
+        parts.state,
+        'guide-state'
+      ) +
+      makeSnippetCard(
+        4,
+        'API function',
+        'Paste this below the closing brace of body, but before ContentView’s final closing brace.',
+        parts.fn,
+        'guide-function'
+      );
+  }
+
+  if (viewBlock) {
+    viewBlock.outerHTML = makeSnippetCard(
+      3,
+      'SwiftUI screen',
+      'Paste this inside var body: some View, replacing the original globe and “Hello, world!” interface.',
+      viewCode,
+      'guide-view'
+    );
+  }
+
+  const snippetSections = [...detail.querySelectorAll('.teaching-snippet')];
+  snippetSections.sort((a, b) => {
+    const na = Number(a.querySelector('.num')?.textContent.replace(/\D/g, '') || 0);
+    const nb = Number(b.querySelector('.num')?.textContent.replace(/\D/g, '') || 0);
+    return na - nb;
+  });
+  const anchor = guide.nextSibling;
+  snippetSections.forEach(section => detail.insertBefore(section, anchor));
+
+  detail.querySelectorAll('[data-guide-copy]').forEach(button => {
+    button.addEventListener('click', () => {
+      const id = button.dataset.guideCopy;
+      const code = detail.querySelector('#' + id)?.textContent || '';
+      const status = detail.querySelector('#status-' + id);
+      copyText(code, status);
+    });
+  });
 
   const finalCard = document.createElement('section');
   finalCard.className = 'full-file-card final-code-card';
   finalCard.innerHTML = `
     <div class="num">Final step — complete working code</div>
     <h3>Complete Swift Playgrounds file</h3>
-    <p class="muted">This is the full file assembled from the snippets above. Nothing needs to be added around it.</p>
+    <p class="muted">This is the full file assembled from all four snippets above. Nothing needs to be added around it.</p>
 
     <div class="complete-checklist">
-      <strong>This final file includes all required parts:</strong>
+      <strong>This final file includes:</strong>
       <ul>
         <li>✓ <code>import SwiftUI</code></li>
-        <li>✓ Codable model</li>
+        <li>✓ complete Codable model</li>
         <li>✓ <code>struct ContentView: View</code></li>
         <li>✓ all <code>@State</code> variables</li>
-        <li>✓ complete <code>var body: some View</code> interface</li>
-        <li>✓ complete API / <code>URLSession</code> function</li>
-        <li>✓ all opening and closing braces</li>
+        <li>✓ the full SwiftUI interface shown in Snippet 3</li>
+        <li>✓ the full API / <code>URLSession</code> function shown in Snippet 4</li>
+        <li>✓ all required opening and closing braces</li>
       </ul>
     </div>
 
     <ol>
-      <li>In Swift Playgrounds, open <code>ContentView.swift</code>.</li>
-      <li>Select <strong>all</strong> of the existing starter code.</li>
+      <li>Open <code>ContentView.swift</code> in Swift Playgrounds.</li>
+      <li>Select all of the existing starter code.</li>
       <li>Delete it so the file is empty.</li>
       <li>Press <strong>Copy complete working code</strong>.</li>
       <li>Paste the code into the empty file.</li>
@@ -162,7 +217,7 @@ ${escapeHtml(indent(parts.fn, 4))}
       <span id="completeStatus"></span>
     </div>
     <pre id="completeSwift">${escapeHtml(complete)}</pre>
-    <div class="brace-tip"><strong>If you get a red error:</strong> first compare your file with this complete block. Check that the entire block was copied and that no old Hello World code remains above or below it.</div>
+    <div class="brace-tip"><strong>If you get a red error:</strong> compare your file with this complete block and check that no old Hello World code remains above or below it.</div>
   `;
 
   detail.appendChild(finalCard);
