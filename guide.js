@@ -21,10 +21,12 @@ function splitFetch(text) {
 
 function createAlignedParts(model, fetchCode, viewCode) {
   const parts = splitFetch(fetchCode);
+  const viewBody = `    var body: some View {\n${indent(viewCode.trim(), 8)}\n    }`;
+
   return {
     model: model.trim(),
     state: indent(parts.state, 4),
-    view: indent(viewCode.trim(), 8),
+    viewBody,
     fn: parts.fn ? indent(parts.fn, 4) : ''
   };
 }
@@ -35,22 +37,18 @@ function buildCompleteFile(aligned) {
     aligned.model,
     'struct ContentView: View {',
     aligned.state,
-    '    var body: some View {',
-    aligned.view,
-    '    }',
+    aligned.viewBody,
     aligned.fn,
     '}'
-  ].filter(Boolean).join('\n\n')
-    .replace('    var body: some View {\n\n', '    var body: some View {\n')
-    .replace('\n\n    }\n\n', '\n    }\n\n');
+  ].filter(Boolean).join('\n\n');
 }
 
 function buildMarkedExample(aligned) {
-  return `import SwiftUI\n\n// SNIPPET 1 — CODABLE MODEL\n${aligned.model}\n\nstruct ContentView: View {\n\n    // SNIPPET 2 — @STATE VARIABLES\n${aligned.state}\n\n    var body: some View {\n        // SNIPPET 3 — SWIFTUI SCREEN\n${aligned.view}\n    }\n\n    // SNIPPET 4 — API FUNCTION\n${aligned.fn}\n}`;
+  return `import SwiftUI\n\n// SNIPPET 1 — CODABLE MODEL\n${aligned.model}\n\nstruct ContentView: View {\n\n    // SNIPPET 2 — @STATE VARIABLES\n${aligned.state}\n\n    // SNIPPET 3 — COMPLETE BODY\n${aligned.viewBody}\n\n    // SNIPPET 4 — API FUNCTION\n${aligned.fn}\n}`;
 }
 
 function verifyAlignment(aligned, complete) {
-  const required = [aligned.model, aligned.state, aligned.view, aligned.fn].filter(Boolean);
+  const required = [aligned.model, aligned.state, aligned.viewBody, aligned.fn].filter(Boolean);
   return required.every(part => complete.includes(part));
 }
 
@@ -110,14 +108,14 @@ function addGuidance() {
   guide.innerHTML = `
     <div class="num">Before you paste</div>
     <h3>See exactly where the four snippets go</h3>
-    <p class="muted">The example below uses the <strong>exact same code</strong> as the four Copy buttons. Indentation is included, so what students copy now matches what they see here and in the final file.</p>
+    <p class="muted">The example below uses the <strong>exact same code</strong> as the four Copy buttons. Snippet 3 now includes the complete <code>var body: some View { ... }</code> block so students are not expected to add that line themselves.</p>
 
     <div class="placement-card">
       <div class="placement-grid">
         <div><b>1</b><strong>Codable model</strong><p>Paste above <code>struct ContentView: View {</code>.</p></div>
-        <div><b>2</b><strong>@State variables</strong><p>Paste inside <code>ContentView</code>, directly above <code>var body: some View</code>.</p></div>
-        <div><b>3</b><strong>SwiftUI screen</strong><p>Paste inside <code>body</code>, replacing the original globe / Hello World UI.</p></div>
-        <div><b>4</b><strong>API function</strong><p>Paste below <code>body</code>, before ContentView’s final <code>}</code>.</p></div>
+        <div><b>2</b><strong>@State variables</strong><p>Paste inside <code>ContentView</code>, directly above the body block.</p></div>
+        <div><b>3</b><strong>Complete SwiftUI body</strong><p>Delete the original <code>var body: some View { ... }</code> block and replace the whole block with Snippet 3.</p></div>
+        <div><b>4</b><strong>API function</strong><p>Paste below the body block, before ContentView’s final <code>}</code>.</p></div>
       </div>
       <pre class="placement-example">${escapeHtml(markedExample)}</pre>
     </div>
@@ -144,14 +142,14 @@ function addGuidance() {
       makeSnippetCard(
         2,
         '@State variables',
-        'Paste this inside ContentView, directly above var body: some View. The four-space indentation is already included.',
+        'Paste this inside ContentView, directly above the complete body block. The four-space indentation is already included.',
         aligned.state,
         'guide-state'
       ) +
       makeSnippetCard(
         4,
         'API function',
-        'Paste this below body, before ContentView’s final closing brace. The four-space indentation is already included.',
+        'Paste this below the complete body block, before ContentView’s final closing brace. The four-space indentation is already included.',
         aligned.fn,
         'guide-function'
       );
@@ -160,9 +158,9 @@ function addGuidance() {
   if (viewBlock) {
     viewBlock.outerHTML = makeSnippetCard(
       3,
-      'SwiftUI screen',
-      'Paste this inside var body: some View, replacing the original globe and “Hello, world!” interface. The eight-space indentation is already included.',
-      aligned.view,
+      'Complete SwiftUI body',
+      'Delete the existing var body: some View { ... } block in Swift Playgrounds and paste this complete replacement. It includes var body, the UI, and the closing brace.',
+      aligned.viewBody,
       'guide-view'
     );
   }
@@ -190,14 +188,14 @@ function addGuidance() {
   finalCard.innerHTML = `
     <div class="num">Final step — complete working code</div>
     <h3>Complete Swift Playgrounds file</h3>
-    <p class="muted">This file is assembled directly from Snippets 1–4 above. The copied snippets are not rewritten or shortened.</p>
+    <p class="muted">This file is assembled directly from Snippets 1–4 above. Snippet 3 includes the complete <code>var body: some View</code> block.</p>
 
     <div class="complete-checklist">
       <strong>Automatic check:</strong>
       <ul>
         <li>${alignmentOK ? '✓' : '⚠'} Snippet 1 matches the final file</li>
         <li>${alignmentOK ? '✓' : '⚠'} Snippet 2 matches the final file</li>
-        <li>${alignmentOK ? '✓' : '⚠'} Snippet 3 matches the final file</li>
+        <li>${alignmentOK ? '✓' : '⚠'} Snippet 3 complete body matches the final file</li>
         <li>${alignmentOK ? '✓' : '⚠'} Snippet 4 matches the final file</li>
         <li>✓ <code>import SwiftUI</code> and the ContentView wrapper are included</li>
       </ul>
