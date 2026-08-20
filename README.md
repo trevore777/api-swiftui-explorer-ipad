@@ -1,60 +1,33 @@
 # API to Swift Playgrounds
 
-A classroom companion for **Years 7–8 students using iPads and Swift Playgrounds**.
+A Years 7–8 classroom companion for iPad + Swift Playgrounds.
 
-## Purpose
+Students can:
+- choose from 10 no-key public APIs
+- test live JSON in Safari
+- copy four aligned Swift snippets
+- copy a complete working `ContentView.swift` file
+- use a prompt builder to ask for guided improvements
+- collect evidence of testing and iteration
 
-Students keep this web app open in Safari while they build an app in Swift Playgrounds. The web app provides a structured learning path rather than a complete finished solution.
+## Swift Playgrounds workflow
 
-## Student workflow
+1. Choose an API.
+2. Test the JSON.
+3. Add the Codable model.
+4. Add the `@State` variables.
+5. Replace the complete `var body: some View { ... }` block.
+6. Add the API function.
+7. Run and improve the app.
+8. Capture evidence.
 
-1. Choose one of 10 no-key public APIs.
-2. Test the live endpoint and inspect the JSON.
-3. Identify the fields the app needs.
-4. Copy a small `Codable` model into Swift Playgrounds.
-5. Copy/adapt the `URLSession` async/await fetch routine.
-6. Copy/adapt a starter SwiftUI interface.
-7. Run and test on the iPad.
-8. Add one student-designed innovation.
-9. Capture evidence and reflect.
+## Reliability notes
 
-## iPad features
+The classroom examples are intentionally simplified. They auto-load their first request, show visible error states, and only decode the fields students need.
 
-- Large touch-friendly controls.
-- Responsive portrait/landscape layout.
-- Copy Swift Code buttons for each stage.
-- Live JSON tester.
-- JSON detective questions.
-- AI prompt builder for use with a school-approved AI tool.
-- Evidence checklist saved in the browser.
-- No assumption that students have VS Code, Terminal or a local Node development environment.
+Recent fixes include:
+- Art Institute images built from the API response `config.iiif_url` plus `image_id`.
+- EmojiHub Unicode values converted into the actual displayed emoji character.
+- FishWatch requests made with an explicit user agent and filtered to usable species records.
 
-## 10 starter APIs
-
-- Cat Facts
-- Dog CEO
-- FishWatch
-- Art Institute of Chicago
-- EmojiHub
-- AmiiboAPI
-- Rick and Morty API
-- Open-Meteo
-- Spaceflight News
-- Nager.Date Holidays
-
-## Running the classroom companion
-
-The teacher can host this on a web server or deploy it so students simply open the URL in Safari.
-
-```bash
-npm install
-npm run dev
-```
-
-Then open `http://localhost:3000`.
-
-## Teaching principle
-
-The supplied Swift code is deliberately small. Students should be able to explain what the URL, JSON, `Codable`, `URLSession`, `JSONDecoder` and SwiftUI elements are doing before adding an extension.
-
-Public APIs can change. Test the live endpoints before beginning a new unit.
+Public APIs can change. Re-test examples before starting a new teaching unit.
