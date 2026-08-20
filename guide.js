@@ -21,7 +21,21 @@ function splitFetch(text) {
 
 function buildCompleteFile(model, fetchCode, viewCode) {
   const parts = splitFetch(fetchCode);
-  return `import SwiftUI\n\n${model}\n\nstruct ContentView: View {\n\n${indent(parts.state, 4)}\n\n    var body: some View {\n${indent(viewCode, 8)}\n    }${parts.fn ? `\n\n${indent(parts.fn, 4)}` : ''}\n}`;
+  const sections = [
+    'import SwiftUI',
+    model.trim(),
+    'struct ContentView: View {',
+    indent(parts.state, 4),
+    '    var body: some View {',
+    indent(viewCode.trim(), 8),
+    '    }',
+    parts.fn ? indent(parts.fn, 4) : '',
+    '}'
+  ].filter(Boolean);
+
+  return sections.join('\n\n')
+    .replace('    var body: some View {\n\n', '    var body: some View {\n')
+    .replace('\n\n    }\n\n', '\n    }\n\n');
 }
 
 async function copyText(text, status) {
@@ -59,7 +73,7 @@ function addGuidance() {
   guide.innerHTML = `
     <div class="num">Before you paste</div>
     <h3>Start with the default Swift Playgrounds file</h3>
-    <p class="muted">When you create a new App, Swift Playgrounds normally gives you <code>import SwiftUI</code>, <code>struct ContentView: View</code>, a <code>VStack</code>, the globe image and “Hello, world!”.</p>
+    <p class="muted">Work through the small code sections below first. They show you what each part does and exactly where it belongs. The complete working file is now at the <strong>bottom of this API lesson</strong>.</p>
 
     <div class="keep-delete-grid">
       <div class="keep-card">
@@ -67,62 +81,95 @@ function addGuidance() {
         <pre class="mini-code">import SwiftUI</pre>
       </div>
       <div class="delete-card">
-        <strong>DELETE</strong>
-        <p>Delete everything from <code>struct ContentView: View {</code> down to the final <code>}</code>.</p>
+        <strong>WHEN USING THE FINAL COMPLETE FILE</strong>
+        <p>Delete the whole starter file, including the original <code>import SwiftUI</code>. The complete code at the bottom already contains it.</p>
       </div>
-    </div>
-
-    <div class="beginner-callout">
-      <strong>Recommended for Years 7–8:</strong>
-      <span>Use the complete-file button below first. It puts the model, @State variables, interface and API function in the correct places for you.</span>
-    </div>
-
-    <div class="full-file-card">
-      <div class="num">Beginner method</div>
-      <h3>Copy the complete Swift file</h3>
-      <ol>
-        <li>Select all of the starter code in Swift Playgrounds.</li>
-        <li>Delete it.</li>
-        <li>Press <strong>Copy complete Swift file</strong> below.</li>
-        <li>Paste it into <code>ContentView.swift</code>.</li>
-        <li>Press <strong>Run ▶</strong>.</li>
-      </ol>
-      <div class="actions">
-        <button class="primary" id="copyCompleteSwift">Copy complete Swift file</button>
-        <span id="completeStatus"></span>
-      </div>
-      <pre id="completeSwift">${escapeHtml(complete)}</pre>
     </div>
 
     <div class="placement-card">
-      <div class="num">Adding the code in parts</div>
-      <h3>Exactly where each section goes</h3>
+      <div class="num">Build it in parts</div>
+      <h3>Where each code snippet belongs</h3>
       <div class="placement-grid">
         <div><b>1</b><strong>Codable model</strong><p>Paste it <em>above</em> <code>struct ContentView: View {</code>.</p></div>
         <div><b>2</b><strong>@State variables</strong><p>Paste them <em>inside ContentView</em>, immediately above <code>var body: some View</code>.</p></div>
-        <div><b>3</b><strong>SwiftUI screen</strong><p>Inside <code>body</code>, delete the old globe/Hello World <code>VStack</code> and replace it with the new UI.</p></div>
+        <div><b>3</b><strong>SwiftUI screen</strong><p>Inside <code>body</code>, delete the original globe / Hello World interface and replace it with this UI.</p></div>
         <div><b>4</b><strong>API function</strong><p>Paste it below the closing brace of <code>body</code>, but before ContentView’s final <code>}</code>.</p></div>
       </div>
-      <pre class="placement-example">import SwiftUI\n\n// 1. MODEL GOES HERE\n${escapeHtml(model)}\n\nstruct ContentView: View {\n\n    // 2. @STATE GOES HERE\n${escapeHtml(indent(parts.state, 4))}\n\n    var body: some View {\n        // 3. REPLACE HELLO WORLD UI HERE\n    }\n\n    // 4. API FUNCTION GOES HERE\n${escapeHtml(indent(parts.fn, 4))}\n}</pre>
+      <pre class="placement-example">import SwiftUI
+
+// 1. MODEL GOES HERE
+${escapeHtml(model)}
+
+struct ContentView: View {
+
+    // 2. @STATE GOES HERE
+${escapeHtml(indent(parts.state, 4))}
+
+    var body: some View {
+        // 3. REPLACE HELLO WORLD UI HERE
+    }
+
+    // 4. API FUNCTION GOES HERE
+${escapeHtml(indent(parts.fn, 4))}
+}</pre>
     </div>
 
-    <div class="brace-tip"><strong>If you get a red error:</strong> compare your <code>{ }</code> braces with the complete file above. A function accidentally pasted outside <code>ContentView</code>, or a missing brace, is a common copy-and-paste error.</div>
+    <div class="brace-tip"><strong>Important:</strong> the snippets immediately below are only parts of the program. Do not expect an individual snippet to run by itself. Work through them, then use the complete checked file at the bottom.</div>
   `;
 
   const firstBlock = detail.querySelector('.block');
   if (firstBlock) detail.insertBefore(guide, firstBlock);
   else detail.appendChild(guide);
 
-  guide.querySelector('#copyCompleteSwift').addEventListener('click', () => {
-    copyText(complete, guide.querySelector('#completeStatus'));
-  });
-
   const modelBlock = modelEl.closest('.block');
   const fetchBlock = fetchEl.closest('.block');
   const viewBlock = viewEl.closest('.block');
-  if (modelBlock) modelBlock.insertAdjacentHTML('afterbegin', '<div class="paste-location"><strong>Paste here:</strong> above <code>struct ContentView: View {</code>.</div>');
-  if (fetchBlock) fetchBlock.insertAdjacentHTML('afterbegin', '<div class="paste-location"><strong>Paste here:</strong> inside <code>ContentView</code>. Put the <code>@State</code> lines above <code>body</code>, and the <code>func</code> below <code>body</code> before the final brace.</div>');
-  if (viewBlock) viewBlock.insertAdjacentHTML('afterbegin', '<div class="paste-location"><strong>Paste here:</strong> inside <code>var body: some View</code>. Replace the starter globe / “Hello, world!” interface.</div>');
+  if (modelBlock) modelBlock.insertAdjacentHTML('afterbegin', '<div class="paste-location"><strong>Snippet 1 — Paste here:</strong> above <code>struct ContentView: View {</code>.</div>');
+  if (fetchBlock) fetchBlock.insertAdjacentHTML('afterbegin', '<div class="paste-location"><strong>Snippet 2 — This block contains TWO parts:</strong> put the <code>@State</code> line(s) above <code>body</code>, and put the <code>func</code> below <code>body</code> before ContentView’s final brace.</div>');
+  if (viewBlock) viewBlock.insertAdjacentHTML('afterbegin', '<div class="paste-location"><strong>Snippet 3 — Paste here:</strong> inside <code>var body: some View</code>, replacing the starter globe / “Hello, world!” interface.</div>');
+
+  const finalCard = document.createElement('section');
+  finalCard.className = 'full-file-card final-code-card';
+  finalCard.innerHTML = `
+    <div class="num">Final step — complete working code</div>
+    <h3>Complete Swift Playgrounds file</h3>
+    <p class="muted">This is the full file assembled from the snippets above. Nothing needs to be added around it.</p>
+
+    <div class="complete-checklist">
+      <strong>This final file includes all required parts:</strong>
+      <ul>
+        <li>✓ <code>import SwiftUI</code></li>
+        <li>✓ Codable model</li>
+        <li>✓ <code>struct ContentView: View</code></li>
+        <li>✓ all <code>@State</code> variables</li>
+        <li>✓ complete <code>var body: some View</code> interface</li>
+        <li>✓ complete API / <code>URLSession</code> function</li>
+        <li>✓ all opening and closing braces</li>
+      </ul>
+    </div>
+
+    <ol>
+      <li>In Swift Playgrounds, open <code>ContentView.swift</code>.</li>
+      <li>Select <strong>all</strong> of the existing starter code.</li>
+      <li>Delete it so the file is empty.</li>
+      <li>Press <strong>Copy complete working code</strong>.</li>
+      <li>Paste the code into the empty file.</li>
+      <li>Press <strong>Run ▶</strong>.</li>
+    </ol>
+
+    <div class="actions">
+      <button class="primary" id="copyCompleteSwift">Copy complete working code</button>
+      <span id="completeStatus"></span>
+    </div>
+    <pre id="completeSwift">${escapeHtml(complete)}</pre>
+    <div class="brace-tip"><strong>If you get a red error:</strong> first compare your file with this complete block. Check that the entire block was copied and that no old Hello World code remains above or below it.</div>
+  `;
+
+  detail.appendChild(finalCard);
+
+  finalCard.querySelector('#copyCompleteSwift').addEventListener('click', () => {
+    copyText(complete, finalCard.querySelector('#completeStatus'));
+  });
 }
 
 if (detail) {
